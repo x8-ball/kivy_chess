@@ -39,6 +39,7 @@ class Game(Widget):
         print(Window.size)
         tile_size = float(self.width/8)
         self.board = self.generate_board(tile_size)
+        self.figures_location = [[None] * 8 for i in range(8)]
         self.setup_game()
 
     def setup_game(self):
@@ -66,12 +67,32 @@ class Game(Widget):
             return self.board[x][y]
         except:
             return None
+    def sync_pos(self,figure,new_pos):
+        old_x = figure.board_pos[0]
+        old_y = figure.board_pos[1]
+        self.figures_location[old_x][old_y] = None
+        
+        new_x = new_pos[0]
+        new_y = new_pos[1]
+        print(len(self.figures_location))
+        for i in range(8):
+            print(len(self.figures_location[i]))
+        self.figures_location[new_x][new_y] = figure
+
     def get_figure_from_board(self,pos):
-        pass
+        x = pos[0]
+        y = pos[1]
+        try:
+            return self.figures_location[x][y]
+        except:
+            return None
+
     def add_to_board(self,figure,pos):
-        x=pos[0]
-        y=pos[1]
+        x = pos[0]
+        y = pos[1]
+        self.figures_location[x][y] = figure
         self.add_widget(figure)
+
     def setup_board(self,color):
         addendum = ""
         if(color == "white"):

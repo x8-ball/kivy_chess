@@ -108,10 +108,15 @@ class Pawn(Figure):
     def click(self,obj):
         remove_examples(self.game)        
         active_figure=self.get_active_figure()
-        if active_figure != None:
+        print("clicking: "+ str(active_figure),str(self.uid))
+        if active_figure == None:
             self.show_possible_move()
             return
+        print("clicking: "+ str(active_figure),str(self.uid))
         if str(active_figure) == str(self.uid):
+            self.delete_active_figure()
+            print("activ figure")
+            remove_examples(self.game)
             return
         self.show_possible_move()
 
@@ -124,7 +129,17 @@ class Pawn(Figure):
             direction = 1
         else:
             direction = -1
+
+        target_pos = (self.board_pos[0]+1, self.board_pos[1]+direction)
+        if(self.check_kill(target_pos)):
+            draw_example(self.game,target_pos,self)
+        
+        target_pos=(self.board_pos[0]-1, self.board_pos[1]+direction)
+        if(self.check_kill(target_pos)):
+            draw_example(self.game,target_pos,self)
+
         if(not self.moved and not hasattr(self.game,"examples")):
+            print("not moved so one ahead")
             #check for all in front of pawn
             for field in [1,2]:
                 target_pos=self.board_pos[0], self.board_pos[1]+field*direction
@@ -136,23 +151,19 @@ class Pawn(Figure):
                 draw_example(self.game,target_pos,self)
             #check two diagonals
             return
-            target_pos = (self.board_pos[0]+1, self.board_pos[1]+direction)
-            if(self.check_kill(target_pos)):
-                draw_example(self.game,target_pos,self)
-            
-            target_pos=(self.board_pos[0]-1, self.board_pos[1]+direction)
-            if(self.check_kill(target_pos)):
-                draw_example(self.game,target_pos,self)
             # target_0_pos=self.board_pos[0], self.board_pos[1]+1*direction
             # target_1_pos=self.board_pos[0], self.board_pos[1]+2*direction
-        elif(not self.moved):
+        elif(self.moved):
+            print("already moved so one ahead")
             target_pos=self.board_pos[0], self.board_pos[1]+1*direction
             draw_example(self.game,target_pos,self)
-    
+        else:
+            print("nothing")
+            print(self.moved)
     def check_kill(self,pos):
-        #print(pos)
-        target_tile = self.game.get_tile_from_board(pos)
-        if(target_tile.children):
+        target = self.game.get_figure_from_board(pos)
+        #print(target.children)
+        if(target != None):
             #print("check kill true")
             return True
         else:
@@ -177,9 +188,16 @@ class Example(Figure):
         #print("referenced_figure: " + str(figure.__name__))
         remove_examples(self.game)
         print("positioning figure: " + str(self.board_pos))
-        
+        for x in range(8):
+            for y in range(8):
+                try:
+                    self.game.figures_location[x][y]
+                except:
+                    print("nofigure found at "+str((x,y)))
         figure = self.referenced_figure
         figure.position_on_board(self.board_pos)
+        self.game.sync_pos(figure,self.board_pos)
+        figure.delete_active_figure()
         self.callback_function()
 
     def dummy(self):
