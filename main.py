@@ -34,61 +34,91 @@ class Tile(Widget):
 class Game(Widget):
     def __init__(self,**kwargs):
         super(Game, self).__init__(**kwargs)
-        self.width = Window.size[0]
+        self.width = Window.size[0]-200
         self.height = Window.size[1]-self.width
-        tile_size = float(Window.size[0]/8)
+        print(Window.size)
+        tile_size = float(self.width/8)
         self.board = self.generate_board(tile_size)
+        self.setup_game()
+
+    def setup_game(self):
         self.setup_board("white")
         self.setup_board("black")
-    
-    def setup_game(self):
-        self.setup_white()
-        self.setup_black()
 
+    def parse_pos_to_numbers(self,pos):
+        alpha_numbers = "abcdefgh"
+        numeric_numbers = "12345678"
+        print(pos)
+        return alpha_numbers.index(pos[0].lower()),numeric_numbers.index(pos[1])
+
+    def parse_number_to_pos(self,number):
+        numeric = "12345678"
+        alpha = "abcdefgh"
+        try:
+            return alpha.index(number.lower())
+        except:
+            return numeric[number]
+    def get_tile_from_board(self,pos):
+        x = pos[0]
+        y = pos[1]
+        print(self.board[x][y].children)
+        try:
+            return self.board[x][y]
+        except:
+            return None
+    def get_figure_from_board(self,pos):
+        pass
+    def add_to_board(self,figure,pos):
+        x=pos[0]
+        y=pos[1]
+        self.add_widget(figure)
     def setup_board(self,color):
         addendum = ""
         if(color == "white"):
             addendum = "1"
             #knight&queen
-            figure = Queen(self,color,"D"+addendum)
-            self.add_widget(figure)
-            figure = King(self,color,"E"+addendum)
-            self.add_widget(figure)
+            self.add_figure_to_board("Queen",color,"D"+addendum)
+            self.add_figure_to_board("King",color,"E"+addendum)
+            #pawns
             for row in "ABCDEFGH":
-                figure = Pawn(self,color,row+"2")
-                self.add_widget(figure)
+                self.add_figure_to_board("Pawn",color,row+"2")
         else:
             addendum = "8"
             #knight&queen
-            figure = Queen(self,color,"E"+addendum)
-            self.add_widget(figure)
-            figure = King(self,color,"D"+addendum)
-            self.add_widget(figure)
+            self.add_figure_to_board("Queen",color,"E"+addendum)
+            self.add_figure_to_board("King",color,"D"+addendum)
             for row in "ABCDEFGH":
-                figure = Pawn(self,color,row+"7")
-                self.add_widget(figure)
+                self.add_figure_to_board("Pawn",color,row+"7")
+
         #2xtowers
-        figure = Rook(self,color,"a"+addendum)
-        self.add_widget(figure)
-        figure = Rook(self,color,"h"+addendum)
-        self.add_widget(figure)
+        self.add_figure_to_board("Rook",color,"a"+addendum)
+        self.add_figure_to_board("Rook",color,"h"+addendum)
 
         #2xknights
-        figure = Knight(self,color,"b"+addendum)
-        self.add_widget(figure)
-        figure = Knight(self,color,"g"+addendum)
-        self.add_widget(figure)
-
+        self.add_figure_to_board("Knight",color,"b"+addendum)
+        self.add_figure_to_board("Knight",color,"g"+addendum)
         #2xbishop
-        figure = Bishop(self,color,"c"+addendum)
-        self.add_widget(figure)
-        figure = Bishop(self,color,"f"+addendum)
-        self.add_widget(figure)
-    def parse_pos_to_numbers(self,pos):
-        alpha_numbers = "ABCDEFGH"
-        numeric_numbers = "12345678"
-        return alpha_numbers.index(pos[0]),numeric_numbers.index(pos[1])
-    
+        self.add_figure_to_board("Bishop",color,"c"+addendum)
+        self.add_figure_to_board("Bishop",color,"f"+addendum)
+        
+    def add_figure_to_board(self,name,color,_alpha_pos):
+        pos = self.parse_pos_to_numbers(_alpha_pos)
+        figure = {}
+        if name == "King":
+            figure = King(self,color,pos)
+        elif name == "Queen":
+            figure = Queen(self,color,pos)
+        elif name == "Pawn":
+            figure = Pawn(self,color,pos)
+        elif name == "Rook":
+            figure = Rook(self,color,pos)
+        elif name == "Knight":
+            figure = Knight(self,color,pos)
+        elif name == "Bishop":
+            figure = Bishop(self,color,pos)
+        else:
+            return
+        self.add_to_board(figure,pos) 
     def place_on_center(self,figure,pos):
         center_pos = self.get_center_of_tile(pos)
         x = center_pos[0]-figure.size[0]/2
@@ -96,31 +126,33 @@ class Game(Widget):
         figure.pos = x, y
 
     def get_center_of_tile(self,pos):
-        tile = self.board[pos.upper()]
+        print(pos)
+        x=pos[0]
+        y=pos[1]
+        tile = self.board[x][y]
         x_pos = tile.x
         y_pos = tile.y
-        print(tile.size)
+        #print(tile.size)
         x_pos += tile.size[0] / 2
         y_pos += tile.size[1] / 2
         return x_pos,y_pos
 
     def generate_board(self,tile_size):
         #setup random fields/ maybe with fixxed pattern
-        numeric = "12345678"
-        alpha = "ABCDEFGH"
-        board = {}
+        board = []
         for x in range(0,8):
+            row = []
             for y in range(0,8):
                 color = 3*[(x+y)%2]
                 column_tile = Tile(tile_size,color)
                 column_tile.x = tile_size*x#+(x*100)
                 column_tile.y = tile_size*y#+(y*100)
-                symbol = alpha[x]+numeric[y]
-
+                symbol = self.parse_number_to_pos(x)+\
+                        self.parse_number_to_pos(y)
                 column_tile.text = symbol
-
-                board[symbol] = column_tile
+                row.append(column_tile)
                 self.add_widget(column_tile)
+            board.append(row)
         return board
     
     def update(self,dt):
@@ -139,7 +171,7 @@ class ChessApp(App):
         #game.color_red(count=5)
         Clock.schedule_interval(game.update,1.0/60)
         return game
- 
+
 def config(width,height):
     Config.set('graphics', 'resizable', False)
     Config.set('graphics', 'width', width)
@@ -147,8 +179,8 @@ def config(width,height):
     resource_add_path("./modell")
     resource_add_path("./view/standard_theme/figures")
     Window.size=(width,height)
-    Window.fullscreen = True
+    #Window.fullscreen = True
 
 if __name__ == '__main__':
-    config(600,800)
+    config(800,800)
     ChessApp().run()
